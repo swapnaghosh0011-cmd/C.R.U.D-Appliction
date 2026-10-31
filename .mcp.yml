@@ -1,0 +1,11 @@
+{
+  "mcpServers":
+    {
+      "stirling-pdf":
+        {
+          "transport": "streamable-http",
+          "url": "http://localhost:8080/mcp",
+          "headers": { "X-API-KEY": "" },
+        },
+    },
+}

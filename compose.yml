@@ -1,0 +1,42 @@
+services:
+  minio:
+    image: cgr.dev/chainguard/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # Web Console UI
+    environment:
+      MINIO_ROOT_USER: shovansaha
+      MINIO_ROOT_PASSWORD: password
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+
+  # Optional: Automatically creates the bucket on startup
+  minio-init:
+    image: cgr.dev/chainguard/minio-client:latest 
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadminpassword) do echo 'Waiting for MinIO...' && sleep 1; done;
+      /usr/bin/mc mb myminio/my-bucket;
+      exit 0;
+      "
+      
+  stirling-pdf:
+      restart: unless-stopped
+      image: docker.stirlingpdf.com/stirlingtools/stirling-pdf:latest
+      container_name: stirling-pdf
+      ports:
+        - '8080:8080'
+      volumes:
+        - ./stirling-pdf/trainingData:/usr/share/tessdata
+        - ./stirling-pdf/extraConfigs:/configs
+        - ./stirling-pdf/logs:/logs
+      environment:
+        - APP_LOCALE=en_US
+        - SECURITY_ENABLELOGIN=true # Change to true if you want to require authentication
+volumes:
+  minio_data:
