@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRUD AI — PDF Workspace</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">C</span><div><strong>CRUD AI</strong><small>PDF workspace</small></div></div>
+      <nav>
+        <a class="nav-link active" href="#workspace">Workspace</a>
+        <a class="nav-link" href="#files">My files</a>
+        <a class="nav-link" href="#stirling">PDF tools</a>
+        <a class="nav-link" href="#assistant">AI assistant</a>
+      </nav>
+      <div class="sidebar-note"><span class="dot"></span> Backend connection is configurable</div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div><p class="eyebrow">DOCUMENT MANAGEMENT</p><h1>Your PDF workspace</h1><p class="subheading">Upload, manage and work with your documents.</p></div>
+        <div class="connection"><span id="connectionDot" class="status-dot"></span><span id="connectionText">Not checked</span></div>
+      </header>
+
+      <section class="config panel" id="workspace">
+        <div class="section-heading"><div><p class="eyebrow">SETTINGS</p><h2>Backend connection</h2></div><button id="checkConnection" class="button button-quiet">Check API</button></div>
+        <div class="config-grid">
+          <label class="field wide">API base URL<input id="apiBase" value="http://localhost:8000" placeholder="http://localhost:8000" /></label>
+          <label class="field">User ID<input id="userId" value="yamyam" placeholder="Your user ID" /></label>
+        </div>
+        <p class="hint">The user ID is sent as a query parameter or request field because that is what your current OpenAPI contract specifies. In production, derive it from authenticated user identity instead of trusting a value supplied by the browser.</p>
+      </section>
+
+      <section class="grid two">
+        <article class="panel" id="files">
+          <div class="section-heading"><div><p class="eyebrow">MINIO STORAGE</p><h2>Upload a PDF</h2></div><span class="icon-tile">↑</span></div>
+          <p class="muted">Choose a PDF file and upload it to your MinIO bucket.</p>
+          <label class="dropzone" for="pdfFile"><span class="upload-icon">↑</span><strong id="fileLabel">Choose a PDF file</strong><small>PDF format</small><input id="pdfFile" type="file" accept="application/pdf,.pdf" /></label>
+          <button id="uploadFile" class="button button-primary full">Upload to MinIO</button>
+          <div id="uploadResult" class="result-box" aria-live="polite">Upload results will appear here.</div>
+        </article>
+
+        <article class="panel">
+          <div class="section-heading"><div><p class="eyebrow">YOUR DOCUMENTS</p><h2>Stored files</h2></div><button id="refreshFiles" class="button button-quiet">Refresh</button></div>
+          <p class="muted">Load files stored under your user ID.</p>
+          <div id="fileList" class="file-list"><div class="empty-state">Click Refresh to load your files.</div></div>
+        </article>
+      </section>
+
+      <section class="grid two">
+        <article class="panel">
+          <div class="section-heading"><div><p class="eyebrow">DOCUMENT CONTENT</p><h2>Read a PDF</h2></div><span class="icon-tile">▤</span></div>
+          <label class="field">File name<input id="readFileName" placeholder="report.pdf" /></label>
+          <button id="readFile" class="button button-primary full">Get PDF content</button>
+          <pre id="pdfContent" class="output">PDF content will appear here.</pre>
+        </article>
+
+        <article class="panel">
+          <div class="section-heading"><div><p class="eyebrow">MINIO STORAGE</p><h2>Delete a PDF</h2></div><span class="icon-tile danger-icon">×</span></div>
+          <label class="field">Object name<input id="deleteObjectName" placeholder="yamyam/report.pdf" /></label>
+          <p class="hint">Use the exact object_name returned by your list/upload endpoint.</p>
+          <button id="deleteFile" class="button button-danger full">Delete object</button>
+          <div id="deleteResult" class="result-box">Delete results will appear here.</div>
+        </article>
+      </section>
+
+      <section class="panel" id="stirling">
+        <div class="section-heading"><div><p class="eyebrow">STIRLING PDF</p><h2>PDF processing</h2></div><span class="icon-tile">✦</span></div>
+        <p class="muted">Send a stored PDF to your Stirling integration, then download its processed result.</p>
+        <div class="grid three">
+          <label class="field">Stored file name<input id="stirlingFileName" placeholder="report.pdf" /></label>
+          <label class="field">Stirling file ID<input id="stirlingFileId" placeholder="File ID returned by Stirling" /></label>
+          <div class="field action-field"><span class="field-label">Upload to Stirling</span><button id="stirlingUpload" class="button button-primary full">Start upload</button></div>
+        </div>
+        <div class="grid two stirling-bottom">
+          <div><button id="stirlingDownload" class="button button-quiet full">Download from Stirling</button></div>
+          <div id="stirlingResult" class="result-box">Stirling results will appear here.</div>
+        </div>
+        <p class="hint">Your OpenAPI document shows the Stirling upload route with user_id and file_name query parameters, and the download route with user_id, file_name and file_id. The frontend follows those documented parameters.</p>
+      </section>
+
+      <section class="panel assistant-panel" id="assistant">
+        <div class="section-heading"><div><p class="eyebrow">AI ASSISTANT</p><h2>Ask about a document</h2></div><span class="icon-tile">✧</span></div>
+        <p class="muted">Send a message to your agent. Your current API contract requires user_id, input_text and file_id.</p>
+        <label class="field">File ID<input id="agentFileId" placeholder="Enter the file ID expected by your agent" /></label>
+        <div id="chatMessages" class="chat-messages"><div class="chat-placeholder">Your conversation will appear here.</div></div>
+        <form id="chatForm" class="chat-form">
+          <input id="chatInput" placeholder="Ask a question about your PDF..." autocomplete="off" required />
+          <button class="button button-primary" type="submit">Send</button>
+        </form>
+      </section>
+
+      <footer>CRUD AI · Frontend connected to your FastAPI OpenAPI contract</footer>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
