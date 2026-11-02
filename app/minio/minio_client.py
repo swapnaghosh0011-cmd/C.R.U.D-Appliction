@@ -4,7 +4,6 @@ from minio import Minio
 from app.utils.erro_handeler import MinioErrorHandeler
 import asyncio
 from app.config.settings import setting_manager
-from app.minio.parse_pdf_minio import parse_pdf_from_minio
 from pyresilience import resilient, RetryConfig, TimeoutConfig
 import logfire
 
