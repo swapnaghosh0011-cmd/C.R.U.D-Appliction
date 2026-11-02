@@ -1,8 +1,10 @@
-from pathlib import Path
+from pypdf import PdfReader
+from io import BytesIO
 from minio import Minio
 from app.utils.erro_handeler import MinioErrorHandeler
 import asyncio
 from app.config.settings import setting_manager
+from app.minio.parse_pdf_minio import parse_pdf_from_minio
 from pyresilience import resilient, RetryConfig, TimeoutConfig
 import logfire
 
@@ -174,4 +176,44 @@ class MinioClient:
         except Exception as error:
             logfire.error(
                 f"Error while downloading object from Minio: {error}")
+            raise MinioErrorHandeler("error in minio client")
+
+    @resilient(
+        timeout=TimeoutConfig(
+            seconds=60
+        ),
+        retry=RetryConfig(
+            max_attempts=3,
+            backoff_factor=20
+        )
+    )
+    async def get_all_object_list(self, bucket_name: str, user_id: str):
+        """
+        Retrieves a list of all objects in the specified bucket.
+        Args:
+            bucket_name (str): The name of the bucket to retrieve objects from.
+        Returns:
+            list: A list of object names in the specified bucket.
+        """
+        try:
+            loop = asyncio.get_event_loop()
+            objects = await loop.run_in_executor(
+                None,
+                self.client.list_objects,
+                bucket_name,
+                f"{user_id.rstrip('/')}/",
+                True
+            )
+            return [
+                {
+                    "file_name": obj.object_name.split("/")[-1],
+                    "object_name": obj.object_name,
+                    "size": obj.size
+                }
+                for obj in objects
+                if obj.object_name.lower().endswith(".pdf")
+            ]
+        except Exception as error:
+            logfire.error(
+                f"Error while retrieving object list from Minio: {error}")
             raise MinioErrorHandeler("error in minio client")

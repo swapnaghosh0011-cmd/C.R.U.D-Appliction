@@ -70,3 +70,35 @@ async def deleteobject(request: MinioDeleteRequest) -> object:
         raise HTTPException(
             status_code=500, detail=f"Error while deleting object from data base please try again later"
         )
+
+
+@minio_router_var.get("/minio/getlistobject")
+async def deleteobject(user_id: str) -> list:
+    try:
+        respones = await minio_client.get_all_object_list(
+            bucket_name="defult",
+            user_id=user_id
+        )
+        print(respones)
+        return respones
+    except Exception as error:
+        logfire.error(f"Error while deleting object from Minio: {error}")
+        raise HTTPException(
+            status_code=500, detail=f"Error while deleting object from data base please try again later"
+        )
+
+
+@minio_router_var.get("/minio/getobject")
+async def deleteobject(user_id: str, file_name: str) -> list:
+    try:
+        respones = await minio_client.parse_pdf_from_minio(
+            user_id=user_id,
+            object_name=file_name
+        )
+        print(respones)
+        return respones
+    except Exception as error:
+        logfire.error(f"Error while deleting object from Minio: {error}")
+        raise HTTPException(
+            status_code=500, detail=f"Error while deleting object from data base please try again later"
+        )
