@@ -1,5 +1,4 @@
 from yaml import safe_load
-from contextlib import asynccontextmanager
 import logfire
 import asyncio
 
@@ -9,20 +8,21 @@ def __read_and_parse_yaml(file_path):
         return safe_load(file)
 
 
-@asynccontextmanager
 async def ymlfile_parser(file_path):
     """
     Asynchronously reads and parses a YAML file.
-
     """
     try:
-        respones = await asyncio.to_thread(__read_and_parse_yaml, file_path)
-        yield respones
+        loop = asyncio.get_event_loop()
+        respones = await loop.run_in_executor(None, __read_and_parse_yaml, file_path)
+        return respones
     except Exception as error:
-        print(error)
-        logfire.error(f"Error while parsing YAML file: {error}")
-        raise Exception("Error while parsing YAML file:", error)
-"""
+        logfire.exception(
+            f"Error while reading and parsing YAML file: {error}")
+        raise RuntimeError(error)
+        # re-raise the original error unchanged
+        # re-raise the original error unchanged
+    """
 if __name__ == "__main__":
     async def main():
         async with ymlfile_parser(

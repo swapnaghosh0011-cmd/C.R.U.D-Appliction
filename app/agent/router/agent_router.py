@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.agent.agent_runner import AgentRunner
+from app.agent import AgentService
 from app.config.settings import setting_manager
 from fastapi.responses import StreamingResponse
 from app.types.type_hint import AiResponesRequest
@@ -10,7 +10,8 @@ import logfire
 load_dotenv()
 agent_router_var = APIRouter()
 
-runner = AgentRunner(
+runner = AgentService(
+    agent_type="Google",
     model_name=setting_manager.MODEL_NAME,
     verbose_command=False,
     api_key=setting_manager.GOOGLE_API_KEY
@@ -21,10 +22,12 @@ runner = AgentRunner(
 async def agent_resones(request: AiResponesRequest):
     try:
         async def run_agent():
-            async for chunk in runner.strem_agent(
-                input_text=request.input_text,
-                user_id=request.user_id
+            async for chunk in runner.agent_runner(
+                user_input=request.input_text,
+                user_id=request.user_id,
+                file_id=request.file_id
             ):
+                print(chunk)
                 yield chunk
         return StreamingResponse(run_agent(), media_type="text/event-stream")
     except Exception as error:

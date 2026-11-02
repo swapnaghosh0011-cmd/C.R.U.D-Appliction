@@ -1,53 +1,73 @@
 from fastapi import APIRouter
-from app.stirling.upload import upload_pdf
+from app.mcp_server.mcpserver_upload import upload_file_to_server
+from app.mcp_server.mcpserver_download import download_file_from_server
 from app.minio.minio_client import MinioClient
-from app.config.settings import setting_manager
-from app.types.type_hint import MinioGetRequest
 from app.stirling.file_delete import delete_tmp_file
+from app.config.settings import setting_manager
 from fastapi.exceptions import HTTPException
-from fastapi.responses import RedirectResponse
+from app.stirling.file_delete import delete_tmp_file
 import logfire
 
+stirling_router_var = APIRouter()
 minio_client = MinioClient(
     endpoint=setting_manager.ENDPOINT,
     access_key=setting_manager.ACCESS_KEY,
     secret_key=setting_manager.SECRETKEY
 )
-stirling_router_var = APIRouter()
 
 
 @stirling_router_var.post("/stirling/upload")
-async def edite_file(request: MinioGetRequest):
+async def upload_file(user_id: str, file_name: str):
     try:
-        file_path = f"{setting_manager.TEMP_PATH}/{request.object_name}"
-        print(file_path)
-        # Retrieve the file from MinIO
         respones = await minio_client.getObject(
-            bucket_name="defult",  # Replace with your bucket name
-            user_id=request.user_id,          # Replace with your user ID
-            object_name=request.object_name,   # Replace with your object name
-            file_path=f"{setting_manager.TEMP_PATH}/{request.object_name}"
+            user_id=user_id,
+            object_name=file_name,
+            bucket_name="defult",
+            file_path=f"{setting_manager.TEMP_PATH}/{file_name}"
         )
+        logfire.info('file stored in to tmp file')
         if respones is True:
-            # Upload the file to Stirling
-            respones = await upload_pdf(file_path)
-            if respones is True:
-                await delete_tmp_file(file_path=file_path)
-                return RedirectResponse(
-                    url=setting_manager.REDIRECT_URL,
-                    status_code=307
-                )
-
-            else:
-                raise HTTPException(
-                    status_code=500, detail=f"Error while uploading file to Stirling please try again later"
-                )
+            upload_respones = await upload_file_to_server(
+                user_id=user_id,
+                pdf_name=file_name
+            )
+            await delete_tmp_file(
+                file_path=f"{setting_manager.TEMP_PATH}/{file_name}"
+            )
+            print(f"sever respones :{upload_respones}")
+            return upload_respones
         else:
             raise HTTPException(
-                status_code=500, detail=f"Error while retrieving file from MinIO please try again later"
+                status_code=404, detail=f"File not found in Minio bucket"
             )
-    except Exception as e:
-        logfire.exception(f"Error while uploading file to Stirling: {e}")
+    except Exception as error:
+        logfire.error(f"Error while uploading file to MCP server: {error}")
         raise HTTPException(
-            status_code=500, detail=f"Error while uploading file to Stirling please try again later"
+            status_code=500, detail=f"Error while uploading file to MCP server please try again later"
+        )
+
+
+@stirling_router_var.get("/stirling/download")
+async def download_file(user_id: str, file_name: str, file_id: str):
+    try:
+        respones = await download_file_from_server(
+            file_id=file_id,
+            file_name=file_name
+        )
+        respones = await minio_client.directPutObject(
+            user_id=user_id,
+            bucket_name="defult",
+            file_name=file_name
+        )
+        logfire.info("reuploded to minio succefylly")
+        path = f"{setting_manager.TEMP_PATH}/{file_name}"
+        await delete_tmp_file(file_path=path)
+        logfire.info("downloded file deleted from tmp succefylly")
+        print(respones)
+        return respones
+
+    except Exception as error:
+        logfire.error(f"Error while downloading file from MCP server: {error}")
+        raise HTTPException(
+            status_code=500, detail=f"Error while downloading file from MCP server please try again later"
         )

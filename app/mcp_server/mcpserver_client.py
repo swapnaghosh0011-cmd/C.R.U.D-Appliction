@@ -8,15 +8,19 @@ from langchain.mcp import MCPAdapter
 @asynccontextmanager
 async def get_tools(config_file: str):
     try:
-        async with ymlfile_parser(file_path=config_file) as config:
-            config = config["mcpServers"]
-            config["stirling-pdf"]["headers"]["X-API-KEY"] = setting_manager.STIRLING_API_KEY
-            async with MCPAdapter(config) as adapter:
-                tools = await adapter.list_tools()
+
+        config = await ymlfile_parser(file_path=config_file)
+        config = config["mcpServers"]
+        config["stirling-pdf"]["headers"]["X-API-KEY"] = setting_manager.STIRLING_API_KEY
+        async with MCPAdapter(config) as adapter:
+            tools = await adapter.list_tools()
+
+            """for t in tools:
+                    if t.name == "stirling_download":
+                        print(t.args_schema)
                 logfire.info("tools parsed sucessfully")
-                tools = [t for t in tools if t.name not in (
-                    "stirling_convert", "stirling_ai")]
-                yield tools
+                """
+            yield tools
     except Exception as error:
         logfire.error(f"Error while getting tools: {error}")
         raise Exception("Error while getting tools:", error)

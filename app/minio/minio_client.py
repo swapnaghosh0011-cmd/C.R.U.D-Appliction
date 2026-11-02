@@ -2,6 +2,7 @@ from pathlib import Path
 from minio import Minio
 from app.utils.erro_handeler import MinioErrorHandeler
 import asyncio
+from app.config.settings import setting_manager
 from pyresilience import resilient, RetryConfig, TimeoutConfig
 import logfire
 
@@ -59,7 +60,38 @@ class MinioClient:
                 length,
                 content_type
             )
-            return respones
+            return user_id, respones.object_name
+        except Exception as error:
+            logfire.error(f"Error while putting object into Minio: {error}")
+            raise MinioErrorHandeler("error  in minio client")
+
+    @resilient(
+        timeout=TimeoutConfig(
+            seconds=60
+        ),
+        retry=RetryConfig(
+            max_attempts=3,
+            backoff_factor=20
+        )
+    )
+    async def directPutObject(self, user_id: str, bucket_name: str, file_name: str):
+        """
+        # Implement the logic to put an object into Minio
+        loop = asyncio.get_event_loop()
+        respones = await loop.run_in_executor(None, self.client.fput_object, bucket_name, f"{user_id}/{object_name}", file_path)
+        return respones
+        """
+        # Implement the logic to put an object into Minio
+        try:
+            loop = asyncio.get_event_loop()
+            respones = await loop.run_in_executor(
+                None,
+                self.client.fput_object,
+                bucket_name,
+                f"{user_id}/{file_name}",
+                f"{setting_manager.TEMP_PATH}/{file_name}"
+            )
+            return user_id, respones.object_name
         except Exception as error:
             logfire.error(f"Error while putting object into Minio: {error}")
             raise MinioErrorHandeler("error  in minio client")
@@ -86,7 +118,8 @@ class MinioClient:
             await loop.run_in_executor(None, self.client.fget_object, bucket_name, f"{user_id}/{object_name}", file_path)
             return True
         except Exception as error:
-            logfire.error(f"Error while getting object from Minio: {error}")
+            logfire.exception(
+                f"Error while getting object from Minio: {error}")
             raise MinioErrorHandeler("error  in minio client")
 
     @resilient(
@@ -131,7 +164,7 @@ class MinioClient:
         """
         try:
             loop = asyncio.get_event_loop()
-            respones = await loop.run_in_executor(
+            await loop.run_in_executor(
                 None,
                 self.client.get_object,
                 "defult",

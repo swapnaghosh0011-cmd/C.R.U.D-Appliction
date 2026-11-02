@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+import base64
 
 
 class MinioDataModel(BaseModel):
@@ -29,3 +30,14 @@ class MinioDeleteRequest(BaseModel):
 class AiResponesRequest(BaseModel):
     user_id: str
     input_text: str
+    file_id: str
+
+
+class McpServerUploadReaspones(BaseModel):
+    user_id: str
+    encoded_file: str
+
+
+class McpServerDownloadReaspones(BaseModel):
+    user_id: str
+    file_id: str
