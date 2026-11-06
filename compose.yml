@@ -24,6 +24,25 @@ services:
       /usr/bin/mc mb myminio/my-bucket;
       exit 0;
       "
+<<<<<<< HEAD
 
 volumes:
   minio_data:
+=======
+      
+  stirling-pdf:
+      restart: unless-stopped
+      image: docker.stirlingpdf.com/stirlingtools/stirling-pdf:latest
+      container_name: stirling-pdf
+      ports:
+        - '8080:8080'
+      volumes:
+        - ./stirling-pdf/trainingData:/usr/share/tessdata
+        - ./stirling-pdf/extraConfigs:/configs
+        - ./stirling-pdf/logs:/logs
+      environment:
+        - APP_LOCALE=en_US
+        - SECURITY_ENABLELOGIN=true # Change to true if you want to require authentication
+volumes:
+  minio_data:
+>>>>>>> c0c847f (base commit bulid all over functions and file with mcp connection and crud endpoint)

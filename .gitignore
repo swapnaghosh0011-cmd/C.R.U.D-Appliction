@@ -1,3 +1,13 @@
+<<<<<<< HEAD
 pyproject.toml 
 .venv/
 uv.lock
+=======
+__init__.py/
+.venv/
+__pycache__
+.env
+uv.lock
+pyproject.toml
+.logfire/
+>>>>>>> c0c847f (base commit bulid all over functions and file with mcp connection and crud endpoint)

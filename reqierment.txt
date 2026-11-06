@@ -1,0 +1,11 @@
+minio
+pydantic
+pydantic-settings
+logfire[system-metrics]
+fastapi[standard]
+pyresilience
+httpx
+langchain[mcp]
+langchain_google_genai
+google-genai
+langchain-groq
